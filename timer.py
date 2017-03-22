@@ -55,53 +55,75 @@ class TimeCount:
 
 if __name__ == "__main__":
     import termios, fcntl, sys, os, re
-
-    while True:
-        ipt=raw_input("\rSet Count Down Time(XXmXXs)(or Enter for Normal Timing):")
-        pattern = re.compile(r'^(\d+m)?(\d+s)?')
-        match = pattern.match(ipt)
-        if match:
-            ct = TimeCount(ipt)
-            break
-
-    fd = sys.stdin.fileno()
-    oldterm = termios.tcgetattr(fd)
-    newattr = termios.tcgetattr(fd)
-    newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
-    termios.tcsetattr(fd, termios.TCSANOW, newattr)
-
-    oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
-    ct.start()
-    flag = 0
-    while True:
-        t.sleep(0.005)
-        uin = ''
-        try:
-            uin = sys.stdin.read(1)
-            if uin == "t":
-                break
-            elif uin == 'p':
+    try:
+        ct = None
+        def prepro():
+            global ct
+            print ""
+            while True:
+                print "\033[FSet Count Down Time(XXmXXs)(or Enter for Normal Timing):"," "*10
+                ipt=raw_input("\033[FSet Count Down Time(XXmXXs)(or Enter for Normal Timing):")
+                ipt = ipt + " "
+                pattern = re.compile(r'^(\d+m)?(\d+s)?\s')
+                match = pattern.match(ipt)
+                if match:
+                    ct = TimeCount(ipt)
+                    break
+        prepro()
+        fd = sys.stdin.fileno()
+        oldterm = termios.tcgetattr(fd)
+        newattr = termios.tcgetattr(fd)
+        newattr[3] = newattr[3] & ~termios.ICANON & ~termios.ECHO
+        oldflags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        
+        def setpro():
+            termios.tcsetattr(fd, termios.TCSANOW, newattr)
+            fcntl.fcntl(fd, fcntl.F_SETFL, oldflags | os.O_NONBLOCK)
+        def revpro():
+            termios.tcsetattr(fd, termios.TCSANOW, oldterm)
+            fcntl.fcntl(fd, fcntl.F_SETFL, oldflags)
+        setpro()
+        ct.start()
+        flag = 0
+        while True:
+            t.sleep(0.005)
+            uin = ''
+            try:
+                uin = sys.stdin.read(1)
+                if uin == "t":
+                    break
+                elif uin == 'p':
+                    ct.showtime()
+                    ct.pause()
+                    print '#(c)ontinue/s(t)op/(r)estart/res(e)t#',' '*5,
+                    flag = 1
+                elif uin == 'r':
+                    flag = 2
+                elif uin == 'e':
+                    revpro()
+                    print ""
+                    prepro()
+                    setpro()
+                    ct.start()
+                    flag=0
+            except IOError:pass
+            if flag == 0:
                 ct.showtime()
-                ct.pause()
-                print '#(c)ontinue/(r)estart/s(t)op#',
-                flag = 1
-            elif uin == 'r':
-                flag = 2
-        except IOError:pass
-        if flag == 0:
-            ct.showtime()
-            print '#(r)estart/s(t)op/(p)ause#',
-        elif flag == 1:
-            if uin == 'c':
-                ct.restart()
-                print ''
+                print '#p(i)n/(p)ause/s(t)op/(r)estart/res(e)t#',
+                if uin == 'i':
+                    print ''
+            elif flag == 1:
+                if uin == 'c':
+                    ct.restart()
+                    print ''
+                    flag = 0
+            elif flag == 2:
+                ct.start()
+                ct.showtime()
+                print '#p(i)n/(p)ause/s(t)op/(r)estart/res(e)t#','  ','(R)',
                 flag = 0
-        elif flag == 2:
-            ct.start()
-            ct.showtime()
-            flag = 0
-
+    except KeyboardInterrupt:
+        pass
 
 
 
