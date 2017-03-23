@@ -57,6 +57,7 @@ if __name__ == "__main__":
     import termios, fcntl, sys, os, re
     try:
         ct = None
+        print "##      Short Cut For Functions \n##  (Pin:i, Pause:p, Continue:c, Stop:t, Restart:r, Reset:e)"
         def prepro():
             global ct
             print ""
@@ -94,8 +95,8 @@ if __name__ == "__main__":
                     break
                 elif uin == 'p':
                     ct.showtime()
+                    print '  ','(P)',
                     ct.pause()
-                    print '#(c)ontinue/s(t)op/(r)estart/res(e)t#',' '*5,
                     flag = 1
                 elif uin == 'r':
                     flag = 2
@@ -109,9 +110,8 @@ if __name__ == "__main__":
             except IOError:pass
             if flag == 0:
                 ct.showtime()
-                print '#p(i)n/(p)ause/s(t)op/(r)estart/res(e)t#',
                 if uin == 'i':
-                    print ''
+                    print '  ','(I)'
             elif flag == 1:
                 if uin == 'c':
                     ct.restart()
@@ -120,7 +120,7 @@ if __name__ == "__main__":
             elif flag == 2:
                 ct.start()
                 ct.showtime()
-                print '#p(i)n/(p)ause/s(t)op/(r)estart/res(e)t#','  ','(R)',
+                print ' '*5,'(R)',
                 flag = 0
     except KeyboardInterrupt:
         pass
